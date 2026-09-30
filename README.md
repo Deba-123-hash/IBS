@@ -118,6 +118,11 @@ campus-life-debugged/
 * Node.js v18+ or v20+
 * npm v9+
 
+> **💡 Windows PowerShell Tip:** If you encounter `npm.ps1 cannot be loaded because running scripts is disabled`, either use `npm.cmd` directly (e.g., `npm.cmd test`, `npm.cmd run dev`) or enable process script execution by running:
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> ```
+
 ### 1. Install Dependencies
 From the repository root:
 ```bash
