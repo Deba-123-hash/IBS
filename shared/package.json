@@ -1,0 +1,8 @@
+{
+  "name": "@campus/shared",
+  "version": "1.0.0",
+  "description": "Shared constants and validators for Campus Life, Debugged",
+  "main": "index.js",
+  "type": "module",
+  "private": true
+}

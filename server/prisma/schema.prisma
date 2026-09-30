@@ -1,0 +1,703 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  FACULTY
+  WARDEN
+  MAINTENANCE
+  SECURITY
+  ACCOUNTS
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  ASSIGNED
+  IN_PROGRESS
+  ON_HOLD
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum GatePassType {
+  DAY_OUTING
+  NIGHT_OUT
+  EMERGENCY
+  VACATION
+}
+
+enum GatePassStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CHECKED_OUT
+  CHECKED_IN
+  EXPIRED
+}
+
+enum LeaveStatus {
+  PENDING
+  RECOMMENDED
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum CertificateType {
+  BONAFIDE
+  STUDY
+  CHARACTER
+  FEE_ESTIMATE
+  NO_OBJECTION
+}
+
+enum CertificateStatus {
+  REQUESTED
+  UNDER_REVIEW
+  APPROVED
+  GENERATED
+  AVAILABLE
+  REJECTED
+}
+
+enum FeeStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+}
+
+enum NoticeType {
+  GENERAL
+  ACADEMIC
+  HOSTEL
+  EXAMINATION
+  EMERGENCY
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  SNACKS
+  DINNER
+}
+
+enum GateEventType {
+  CHECK_OUT
+  CHECK_IN
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  role            Role             @default(STUDENT)
+  firstName       String
+  lastName        String
+  phoneNumber     String?
+  avatarUrl       String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  studentProfile  Student?
+  staffProfile    Staff?
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  conversations   AIConversation[]
+  comments        ComplaintComment[]
+  statusChanges   ComplaintStatusHistory[]
+  noticeReads     NoticeRead[]
+  createdAssignments ComplaintAssignment[] @relation("AssignedByUser")
+
+  @@index([email])
+  @@index([role])
+}
+
+model Department {
+  id          String    @id @default(cuid())
+  name        String
+  code        String    @unique
+  createdAt   DateTime  @default(now())
+
+  programs    Program[]
+  staff       Staff[]
+  subjects    Subject[]
+}
+
+model Program {
+  id            String      @id @default(cuid())
+  name          String
+  degree        String
+  departmentId  String
+  department    Department  @relation(fields: [departmentId], references: [id])
+  batches       Batch[]
+}
+
+model Batch {
+  id            String       @id @default(cuid())
+  name          String
+  academicYear  String
+  currentSemester Int        @default(1)
+  programId     String
+  program       Program      @relation(fields: [programId], references: [id])
+
+  students      Student[]
+  timetables    Timetable[]
+  attendances   Attendance[]
+}
+
+model Student {
+  id                  String             @id @default(cuid())
+  userId              String             @unique
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rollNumber          String             @unique
+  registrationNumber  String             @unique
+  batchId             String
+  batch               Batch              @relation(fields: [batchId], references: [id])
+  emergencyContact    String
+  bloodGroup          String?
+  guardianName        String
+  guardianPhone       String
+
+  roomAllocation      RoomAllocation?
+  attendanceRecords   AttendanceRecord[]
+  complaints          Complaint[]
+  leaveRequests       LeaveRequest[]
+  gatePasses          GatePass[]
+  certificateRequests CertificateRequest[]
+  feeRecords          FeeRecord[]
+  feeQueries          FeeQuery[]
+  messFeedback        MessFeedback[]
+  visitorLogs         VisitorLog[]
+  helpDeskRequests    HelpDeskRequest[]
+
+  @@index([rollNumber])
+  @@index([batchId])
+}
+
+model Staff {
+  id              String             @id @default(cuid())
+  userId          String             @unique
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employeeCode    String             @unique
+  departmentId    String?
+  department      Department?        @relation(fields: [departmentId], references: [id])
+  designation     String
+  trade           String?
+
+  attendances     Attendance[]
+  timetables      Timetable[]
+  classUpdates    ClassUpdate[]
+  managedHostels  Hostel[]
+  notices         Notice[]
+  gateApprovals   GatePassApproval[]
+  complaintAssignments ComplaintAssignment[]
+  gateEvents      GatePassEvent[]
+  verifiedPayments FeePayment[]
+  reviewedCerts   CertificateRequest[]
+  helpDeskCreated HelpDeskRequest[]
+
+  @@index([employeeCode])
+}
+
+model Subject {
+  id            String        @id @default(cuid())
+  code          String        @unique
+  title         String
+  credits       Int           @default(3)
+  departmentId  String
+  department    Department    @relation(fields: [departmentId], references: [id])
+
+  attendances   Attendance[]
+  timetables    Timetable[]
+  classUpdates  ClassUpdate[]
+}
+
+model Attendance {
+  id            String             @id @default(cuid())
+  subjectId     String
+  subject       Subject            @relation(fields: [subjectId], references: [id])
+  facultyId     String
+  faculty       Staff              @relation(fields: [facultyId], references: [id])
+  batchId       String
+  batch         Batch              @relation(fields: [batchId], references: [id])
+  date          DateTime           @default(now())
+  sessionSlot   String
+  topicCovered  String?
+  createdAt     DateTime           @default(now())
+
+  records       AttendanceRecord[]
+
+  @@index([subjectId, date])
+}
+
+model AttendanceRecord {
+  id            String      @id @default(cuid())
+  attendanceId  String
+  attendance    Attendance  @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       Student     @relation(fields: [studentId], references: [id])
+  status        String      @default("PRESENT")
+  remarks       String?
+
+  @@unique([attendanceId, studentId])
+}
+
+model Timetable {
+  id          String    @id @default(cuid())
+  batchId     String
+  batch       Batch     @relation(fields: [batchId], references: [id])
+  subjectId   String
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+  facultyId   String
+  faculty     Staff     @relation(fields: [facultyId], references: [id])
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  classroom   String
+}
+
+model ClassUpdate {
+  id          String    @id @default(cuid())
+  facultyId   String
+  faculty     Staff     @relation(fields: [facultyId], references: [id])
+  subjectId   String
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+  date        DateTime  @default(now())
+  status      String
+  newTime     String?
+  newRoom     String?
+  message     String
+  createdAt   DateTime  @default(now())
+}
+
+model Hostel {
+  id          String        @id @default(cuid())
+  name        String
+  gender      String        @default("COED")
+  wardenId    String?
+  warden      Staff?        @relation(fields: [wardenId], references: [id])
+  blocks      HostelBlock[]
+}
+
+model HostelBlock {
+  id          String    @id @default(cuid())
+  hostelId    String
+  hostel      Hostel    @relation(fields: [hostelId], references: [id], onDelete: Cascade)
+  name        String
+  floorsCount Int       @default(4)
+  rooms       Room[]
+}
+
+model Room {
+  id               String           @id @default(cuid())
+  blockId          String
+  block            HostelBlock      @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  roomNumber       String
+  floorNumber      Int              @default(1)
+  capacity         Int              @default(2)
+  currentOccupancy Int              @default(0)
+
+  allocations      RoomAllocation[]
+  assets           Asset[]
+  complaints       Complaint[]
+
+  @@unique([blockId, roomNumber])
+}
+
+model RoomAllocation {
+  id          String    @id @default(cuid())
+  roomId      String
+  room        Room      @relation(fields: [roomId], references: [id])
+  studentId   String    @unique
+  student     Student   @relation(fields: [studentId], references: [id])
+  startDate   DateTime  @default(now())
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+}
+
+model Asset {
+  id          String    @id @default(cuid())
+  assetTag    String    @unique
+  name        String
+  category    String
+  roomId      String?
+  room        Room?     @relation(fields: [roomId], references: [id])
+  condition   String    @default("OPERATIONAL")
+  createdAt   DateTime  @default(now())
+}
+
+model ComplaintCategory {
+  id          String      @id @default(cuid())
+  name        String      @unique
+  code        String      @unique
+  complaints  Complaint[]
+}
+
+model Complaint {
+  id                    String                   @id @default(cuid())
+  ticketNumber          String                   @unique
+  studentId             String
+  student               Student                  @relation(fields: [studentId], references: [id])
+  title                 String
+  description           String
+  categoryId            String
+  category              ComplaintCategory        @relation(fields: [categoryId], references: [id])
+  locationType          String                   @default("HOSTEL_ROOM")
+  roomId                String?
+  room                  Room?                    @relation(fields: [roomId], references: [id])
+  customLocation        String?
+  priority              Priority                 @default(MEDIUM)
+  status                ComplaintStatus          @default(SUBMITTED)
+  photoUrl              String?
+  aiSuggestedPriority   Priority?
+  aiSuggestedCategory   String?
+  isDuplicate           Boolean                  @default(false)
+  duplicateOfId         String?
+  resolvedAt            DateTime?
+  slaDeadline           DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  comments              ComplaintComment[]
+  statusHistory         ComplaintStatusHistory[]
+  assignment            ComplaintAssignment?
+
+  @@index([status])
+  @@index([studentId])
+  @@index([ticketNumber])
+}
+
+model ComplaintComment {
+  id          String    @id @default(cuid())
+  complaintId String
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  message     String
+  isInternal  Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model ComplaintAssignment {
+  id          String    @id @default(cuid())
+  complaintId String    @unique
+  complaint   Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  staffId     String
+  staff       Staff     @relation(fields: [staffId], references: [id])
+  assignedById String
+  assignedBy  User      @relation("AssignedByUser", fields: [assignedById], references: [id])
+  assignedAt  DateTime  @default(now())
+}
+
+model ComplaintStatusHistory {
+  id          String          @id @default(cuid())
+  complaintId String
+  complaint   Complaint       @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  fromStatus  ComplaintStatus
+  toStatus    ComplaintStatus
+  changedById String
+  changedBy   User            @relation(fields: [changedById], references: [id])
+  comment     String?
+  photoUrl    String?
+  createdAt   DateTime        @default(now())
+}
+
+model LeaveRequest {
+  id               String       @id @default(cuid())
+  studentId        String
+  student          Student      @relation(fields: [studentId], references: [id])
+  startDate        DateTime
+  endDate          DateTime
+  reason           String
+  destination      String
+  emergencyContact String
+  status           LeaveStatus  @default(PENDING)
+  createdAt        DateTime     @default(now())
+}
+
+model GatePass {
+  id               String          @id @default(cuid())
+  passNumber       String          @unique
+  studentId        String
+  student          Student         @relation(fields: [studentId], references: [id])
+  type             GatePassType    @default(DAY_OUTING)
+  reason           String
+  destination      String
+  outTimeExpected  DateTime
+  inTimeExpected   DateTime
+  status           GatePassStatus  @default(PENDING)
+  qrCodeToken      String          @unique
+  createdAt        DateTime        @default(now())
+
+  approvals        GatePassApproval[]
+  events           GatePassEvent[]
+
+  @@index([passNumber])
+  @@index([status])
+}
+
+model GatePassApproval {
+  id          String    @id @default(cuid())
+  gatePassId  String
+  gatePass    GatePass  @relation(fields: [gatePassId], references: [id], onDelete: Cascade)
+  wardenId    String
+  warden      Staff     @relation(fields: [wardenId], references: [id])
+  decision    String
+  remarks     String?
+  decidedAt   DateTime  @default(now())
+}
+
+model GatePassEvent {
+  id             String         @id @default(cuid())
+  gatePassId     String
+  gatePass       GatePass       @relation(fields: [gatePassId], references: [id], onDelete: Cascade)
+  eventType      GateEventType
+  securityStaffId String
+  securityStaff  Staff          @relation(fields: [securityStaffId], references: [id])
+  scannedAt      DateTime       @default(now())
+  isOverdue      Boolean        @default(false)
+}
+
+model Certificate {
+  id            String             @id @default(cuid())
+  type          CertificateType    @unique
+  title         String
+  processingFee Float              @default(0.0)
+  requests      CertificateRequest[]
+}
+
+model CertificateRequest {
+  id            String             @id @default(cuid())
+  requestNumber String             @unique
+  studentId     String
+  student       Student            @relation(fields: [studentId], references: [id])
+  certificateId String
+  certificate   Certificate        @relation(fields: [certificateId], references: [id])
+  purpose       String
+  status        CertificateStatus  @default(REQUESTED)
+  documentUrl   String?
+  reviewedById  String?
+  reviewedBy    Staff?             @relation(fields: [reviewedById], references: [id])
+  remarks       String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model FeeRecord {
+  id            String       @id @default(cuid())
+  studentId     String
+  student       Student      @relation(fields: [studentId], references: [id])
+  academicYear  String
+  semester      Int
+  tuitionAmount Float
+  hostelAmount  Float        @default(0.0)
+  messAmount    Float        @default(0.0)
+  otherAmount   Float        @default(0.0)
+  totalAmount   Float
+  dueAmount     Float
+  status        FeeStatus    @default(UNPAID)
+  dueDate       DateTime
+  createdAt     DateTime     @default(now())
+
+  payments      FeePayment[]
+
+  @@unique([studentId, academicYear, semester])
+}
+
+model FeePayment {
+  id              String    @id @default(cuid())
+  feeRecordId     String
+  feeRecord       FeeRecord @relation(fields: [feeRecordId], references: [id], onDelete: Cascade)
+  transactionRef  String    @unique
+  amountPaid      Float
+  paymentMode     String    @default("ONLINE")
+  paymentDate     DateTime  @default(now())
+  verifiedById    String?
+  verifiedBy      Staff?    @relation(fields: [verifiedById], references: [id])
+}
+
+model FeeQuery {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id])
+  subject     String
+  message     String
+  status      String    @default("OPEN")
+  response    String?
+  createdAt   DateTime  @default(now())
+}
+
+model MessMenu {
+  id                String          @id @default(cuid())
+  date              DateTime
+  mealType          MealType
+  itemsDescription  String
+  isSpecialMeal     Boolean         @default(false)
+
+  feedback          MessFeedback[]
+
+  @@unique([date, mealType])
+}
+
+model MessFeedback {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id])
+  menuId      String?
+  menu        MessMenu? @relation(fields: [menuId], references: [id])
+  mealType    MealType
+  date        DateTime  @default(now())
+  rating      Int       @default(4)
+  foodQuality Int       @default(4)
+  hygiene     Int       @default(4)
+  portion     Int       @default(4)
+  comments    String?
+  createdAt   DateTime  @default(now())
+}
+
+model Visitor {
+  id            String       @id @default(cuid())
+  fullName      String
+  phoneNumber   String
+  idProofType   String
+  idProofNumber String
+  createdAt     DateTime     @default(now())
+
+  logs          VisitorLog[]
+
+  @@index([phoneNumber])
+}
+
+model VisitorLog {
+  id              String    @id @default(cuid())
+  visitorId       String
+  visitor         Visitor   @relation(fields: [visitorId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         Student   @relation(fields: [studentId], references: [id])
+  purpose         String
+  vehicleNumber   String?
+  checkInTime     DateTime  @default(now())
+  checkOutTime    DateTime?
+  securityStaffId String?
+}
+
+model Notice {
+  id            String         @id @default(cuid())
+  title         String
+  content       String
+  type          NoticeType     @default(GENERAL)
+  authorId      String
+  author        Staff          @relation(fields: [authorId], references: [id])
+  isUrgent      Boolean        @default(false)
+  attachmentUrl String?
+  createdAt     DateTime       @default(now())
+
+  targets       NoticeTarget[]
+  reads         NoticeRead[]
+}
+
+model NoticeTarget {
+  id          String    @id @default(cuid())
+  noticeId    String
+  notice      Notice    @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  targetType  String    @default("ALL")
+  targetValue String?
+}
+
+model NoticeRead {
+  id        String    @id @default(cuid())
+  noticeId  String
+  notice    Notice    @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt    DateTime  @default(now())
+
+  @@unique([noticeId, userId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String    @default("SYSTEM")
+  linkUrl   String?
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  @@index([userId, isRead])
+}
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  action      String
+  entity      String
+  entityId    String
+  ipAddress   String?
+  userAgent   String?
+  payload     String?
+  createdAt   DateTime  @default(now())
+
+  @@index([action])
+  @@index([entity])
+}
+
+model KnowledgeDocument {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  category    String    @default("GENERAL")
+  createdAt   DateTime  @default(now())
+}
+
+model AIConversation {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String      @default("Campus Inquiry")
+  createdAt   DateTime    @default(now())
+  messages    AIMessage[]
+}
+
+model AIMessage {
+  id              String         @id @default(cuid())
+  conversationId  String
+  conversation    AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role            String
+  content         String
+  createdAt       DateTime       @default(now())
+}
+
+model HelpDeskRequest {
+  id            String    @id @default(cuid())
+  ticketNumber  String    @unique
+  staffId       String
+  staff         Staff     @relation(fields: [staffId], references: [id])
+  studentId     String
+  student       Student   @relation(fields: [studentId], references: [id])
+  requestType   String
+  rawDetails    String
+  status        String    @default("LOGGED")
+  createdAt     DateTime  @default(now())
+}

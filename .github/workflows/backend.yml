@@ -1,0 +1,23 @@
+name: Backend Container & API Verification
+
+on:
+  push:
+    paths:
+      - 'server/**'
+    branches: [ main ]
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify Prisma & Server Syntax
+        run: |
+          cd server
+          npm ci || npm install
+          npx prisma generate
+          node --check src/server.js
+          node --check src/app.js

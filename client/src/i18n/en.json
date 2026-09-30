@@ -1,0 +1,28 @@
+{
+  "app": {
+    "title": "Campus Life, Debugged",
+    "tagline": "Attendance, Mess, Hostel, Repeat: Campus Life, Debugged",
+    "onePlatform": "One platform for everyday campus operations."
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "help": "Help & Support",
+    "login": "Sign In",
+    "dashboard": "Dashboard",
+    "attendance": "Attendance",
+    "complaints": "Complaints",
+    "gatePass": "Gate Passes",
+    "mess": "Mess",
+    "certificates": "Certificates",
+    "admin": "Admin Center"
+  },
+  "auth": {
+    "signInTitle": "Welcome Back",
+    "signInSubtitle": "Sign in with your institutional credentials",
+    "emailLabel": "Institutional Email / Roll Number",
+    "passwordLabel": "Password",
+    "submitBtn": "Sign In",
+    "quickDemo": "1-Click Demo Evaluation Roles"
+  }
+}

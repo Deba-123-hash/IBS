@@ -1,0 +1,36 @@
+name: Continuous Integration & Production Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20 Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Monorepo Root Dependencies
+        run: npm install || true
+
+      - name: Install & Validate Server Dependencies
+        run: |
+          cd server
+          npm install
+          npx prisma generate
+
+      - name: Install & Build React Client (Vite)
+        run: |
+          cd client
+          npm install
+          npm run build
