@@ -1,4 +1,5 @@
-import { processAssistantQuery } from '../ai/campusAssistant.js';
+import { sendChatMessage } from '../services/ai/chatService.js';
+import { generateStreamingCompletion, generateCompletion } from '../services/groqService.js';
 import { classifyComplaint } from '../ai/complaintClassifier.js';
 import { detectRecurringIssues } from '../ai/recurringIssueDetector.js';
 import { checkDuplicateComplaint } from '../ai/duplicateDetector.js';
@@ -6,30 +7,63 @@ import { successResponse, errorResponse } from '../utils/response.js';
 
 export const handleAiChat = async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, messages } = req.body;
+    const userMessage = message || (Array.isArray(messages) && messages.length > 0 ? messages[messages.length - 1]?.content : null);
 
-    if (!message) {
-      return errorResponse(res, 'Message text is required', 'MISSING_PROMPT', 400);
+    if (!userMessage || typeof userMessage !== 'string' || !userMessage.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Message is required and must not be empty'
+        }
+      });
     }
 
-    const result = await processAssistantQuery(message);
+    const chatResult = await sendChatMessage(
+      userMessage.trim(),
+      Array.isArray(messages) ? messages : [],
+      req.user
+    );
 
-    return successResponse(res, {
-      response: result.reply,
-      suggestedAction: result.suggestedAction,
-      timestamp: new Date().toISOString()
-    }, 'AI response generated');
+    if (!chatResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'GROQ_API_ERROR',
+          message: chatResult.error || 'Failed to process AI chat'
+        }
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: chatResult.message,
+      response: chatResult.message, // Compatibility with Chatbot.jsx UI
+      suggestedAction: chatResult.suggestedAction || null,
+      actionDetails: chatResult.actionDetails || null,
+      intent: chatResult.intent || 'GENERAL',
+      model: chatResult.model || 'qwen/qwen3.8-27b'
+    });
   } catch (error) {
-    return errorResponse(res, 'Failed to process AI chat query', 'AI_CHAT_ERROR', 500);
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'AI_CHAT_ERROR',
+        message: 'Internal server error while processing AI chat'
+      }
+    });
   }
 };
 
 export const handleClassifyComplaint = async (req, res) => {
   try {
-    const { title, description, location } = req.body;
+    const title = req.body.title || req.body.text || 'Grievance Issue';
+    const description = req.body.description || req.body.text || title;
+    const location = req.body.location || 'Campus';
 
-    if (!title || !description) {
-      return errorResponse(res, 'Title and description required for classification', 'MISSING_FIELDS', 400);
+    if (!title && !description) {
+      return errorResponse(res, 'Title or text required for classification', 'MISSING_FIELDS', 400);
     }
 
     const classification = await classifyComplaint(title, description, location);

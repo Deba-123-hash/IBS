@@ -15,6 +15,8 @@ export const corsOptions = {
 
     if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
       callback(null, true);
+    } else if (ENV.NODE_ENV === 'production') {
+      callback(new Error('Blocked by CORS policy'));
     } else {
       callback(null, true); // Permissive in development
     }

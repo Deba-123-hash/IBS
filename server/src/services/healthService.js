@@ -2,34 +2,38 @@ import prisma from '../config/database.js';
 import { ENV } from '../config/env.js';
 
 export const checkHealth = async () => {
-  let dbStatus = 'DISCONNECTED';
+  let dbHealthy = false;
   let dbLatencyMs = null;
 
   if (prisma) {
     const startTime = Date.now();
     try {
       await prisma.$queryRaw`SELECT 1`;
-      dbStatus = 'CONNECTED (Neon PostgreSQL)';
+      dbHealthy = true;
       dbLatencyMs = Date.now() - startTime;
     } catch (err) {
-      dbStatus = `UNREACHABLE (${err.message.substring(0, 50)}...)`;
+      try {
+        await new Promise(r => setTimeout(r, 800));
+        await prisma.$queryRaw`SELECT 1`;
+        dbHealthy = true;
+        dbLatencyMs = Date.now() - startTime;
+      } catch (retryErr) {
+        dbHealthy = false;
+      }
     }
   }
 
   return {
-    status: 'UP',
-    platform: 'Campus Life, Debugged - Campus Operations OS',
-    tagline: 'Attendance, Mess, Hostel, Repeat: Campus Life, Debugged',
-    organisation: 'Fretbox',
+    api: 'healthy',
+    database: dbHealthy ? 'healthy' : 'unhealthy',
     environment: ENV.NODE_ENV,
     uptimeSeconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
-    database: {
+    details: {
       provider: 'Neon Serverless PostgreSQL (Prisma ORM)',
-      status: dbStatus,
+      status: dbHealthy ? 'CONNECTED' : 'DISCONNECTED',
       latencyMs: dbLatencyMs
-    },
-    version: '1.0.0-phase1-foundation'
+    }
   };
 };
 

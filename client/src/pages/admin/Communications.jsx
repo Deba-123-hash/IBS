@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../api/client.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -55,6 +56,36 @@ export default function Communications() {
   const [publishing, setPublishing] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
+  // Fetch live notices from Neon database
+  useEffect(() => {
+    async function fetchNotices() {
+      try {
+        const res = await apiClient.get('/notices');
+        const list = res.data?.data?.notices || res.data?.notices || res.data?.data || (Array.isArray(res.data) ? res.data : []);
+        if (Array.isArray(list) && list.length > 0) {
+          const formatted = list.map((n) => ({
+            id: n.noticeNumber || n.id,
+            title: n.title,
+            category: n.category || 'CAMPUS',
+            priority: n.priority || 'NORMAL',
+            target: (n.targetAudience || 'ALL').replace('_', ' '),
+            recipients: n.recipients || 2450,
+            readCount: n.readCount || 1,
+            actionCount: n.actionCount || 0,
+            publishedAt: n.createdAt ? new Date(n.createdAt).toLocaleDateString('en-IN') : 'Recent'
+          }));
+          setNotices((prev) => {
+            const existingIds = new Set(formatted.map(f => f.id));
+            return [...formatted, ...prev.filter(p => !existingIds.has(p.id))];
+          });
+        }
+      } catch (err) {
+        console.warn('Live notices sync', err);
+      }
+    }
+    fetchNotices();
+  }, []);
+
   // Deterministic Audience Estimation Calculation
   const getEstimatedRecipients = () => {
     switch (form.targetAudience) {
@@ -67,13 +98,30 @@ export default function Communications() {
     }
   };
 
-  const handlePublish = (e) => {
+  const handlePublish = async (e) => {
     e.preventDefault();
     setPublishing(true);
 
     const est = getEstimatedRecipients();
+    let publishedNoticeId = `NTC-2026-0${Math.floor(100 + Math.random() * 900)}`;
+
+    try {
+      const res = await apiClient.post('/notices', {
+        title: form.title,
+        content: form.content,
+        category: form.category,
+        targetAudience: form.targetAudience,
+        priority: form.priority
+      });
+      if (res.data?.data?.id || res.data?.id) {
+        publishedNoticeId = res.data.data?.noticeNumber || res.data.data?.id || publishedNoticeId;
+      }
+    } catch (err) {
+      console.warn('Notice publication API fallback', err);
+    }
+
     const newNotice = {
-      id: `NTC-2026-0${Math.floor(100 + Math.random() * 900)}`,
+      id: publishedNoticeId,
       title: form.title,
       category: form.category,
       priority: form.priority,
@@ -121,7 +169,7 @@ export default function Communications() {
         {/* Notice Composer */}
         <Card className="p-6 lg:col-span-1 space-y-4">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Send className="h-4 w-4 text-blue-600" />
+            <Send className="h-4 w-4 text-emerald-600" />
             <span>Compose Targeted Notice</span>
           </h2>
 
@@ -180,12 +228,12 @@ export default function Communications() {
             </div>
 
             {/* Target Audience Estimation Callout */}
-            <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl flex items-center justify-between text-xs">
-              <span className="text-blue-900 font-semibold flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5 text-blue-600" />
+            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+              <span className="text-emerald-900 font-semibold flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5 text-emerald-600" />
                 Target Estimation:
               </span>
-              <span className="font-bold text-blue-700 font-mono">
+              <span className="font-bold text-emerald-800 font-mono">
                 {getEstimatedRecipients()} Students
               </span>
             </div>

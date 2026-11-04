@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useToast } from '../../context/ToastContext.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { StatCard } from '../../components/ui/StatCard.jsx';
@@ -31,6 +32,7 @@ import {
 } from 'recharts';
 
 export default function Analytics() {
+  const toast = useToast();
   const [dateRange, setDateRange] = useState('30D');
 
   const requestVolumeData = [
@@ -60,6 +62,44 @@ export default function Analytics() {
     { name: 'Cleaning', active: 4, resolved: 50 }
   ];
 
+  const handleExportCSV = () => {
+    try {
+      const rows = [
+        ['CAMPUS OS Campus Intelligence & Telemetry Export'],
+        ['Date Range', dateRange],
+        ['Exported At', new Date().toISOString()],
+        [],
+        ['Metric', 'Value'],
+        ['Total Students', '2450'],
+        ['Active Requests', '126'],
+        ['Open Complaints', '48'],
+        ['SLA Breaches', '5'],
+        ['Avg Turnaround', '6.2h'],
+        ['SLA Compliance', '87.4%'],
+        [],
+        ['Department', 'Active Workload', 'Resolved This Month'],
+        ...departmentWorkloadData.map(d => [d.name, d.active, d.resolved]),
+        [],
+        ['Complaint Ageing Range', 'Count'],
+        ...complaintAgeingData.map(a => [a.range, a.count])
+      ];
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `CAMPUS_OS_Campus_Telemetry_${dateRange}_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Telemetry report downloaded as CSV', 'Export Completed');
+    } catch (err) {
+      console.error('CSV export failed', err);
+      toast.error('Could not generate CSV file', 'Export Failed');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -76,7 +116,7 @@ export default function Analytics() {
                 key={d}
                 onClick={() => setDateRange(d)}
                 className={`px-3 py-1 rounded-lg transition ${
-                  dateRange === d ? 'bg-blue-600 text-white' : 'text-slate-600 hover:text-slate-900'
+                  dateRange === d ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {d}
@@ -84,7 +124,7 @@ export default function Analytics() {
             ))}
           </div>
 
-          <Button size="sm" variant="secondary" onClick={() => alert('CSV export initiated for current filtered view.')}>
+          <Button size="sm" variant="secondary" onClick={handleExportCSV}>
             <Download className="h-3.5 w-3.5 mr-1" />
             <span>Export CSV</span>
           </Button>
@@ -139,8 +179,8 @@ export default function Analytics() {
                 <YAxis stroke="#94a3b8" fontSize={11} />
                 <Tooltip contentStyle={{ backgroundColor: '#1e293b', color: '#fff', borderRadius: '8px', fontSize: '12px' }} />
                 <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                <Line type="monotone" dataKey="requests" stroke="#2563eb" strokeWidth={2.5} name="Lodged" />
-                <Line type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2.5} name="Completed" />
+                <Line type="monotone" dataKey="requests" stroke="#2563eb" strokeWidth={2.5} name="Lodged" isAnimationActive={false} />
+                <Line type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2.5} name="Completed" isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -159,7 +199,7 @@ export default function Analytics() {
                 <XAxis dataKey="range" stroke="#94a3b8" fontSize={11} />
                 <YAxis stroke="#94a3b8" fontSize={11} />
                 <Tooltip contentStyle={{ backgroundColor: '#1e293b', color: '#fff', borderRadius: '8px', fontSize: '12px' }} />
-                <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Tickets" />
+                <Bar dataKey="count" fill="#3b82f6" radius={[6, 6, 0, 0]} name="Tickets" isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -179,8 +219,8 @@ export default function Analytics() {
                 <YAxis stroke="#94a3b8" fontSize={11} />
                 <Tooltip contentStyle={{ backgroundColor: '#1e293b', color: '#fff', borderRadius: '8px', fontSize: '12px' }} />
                 <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                <Bar dataKey="active" fill="#f59e0b" radius={[6, 6, 0, 0]} name="Active / In Progress" />
-                <Bar dataKey="resolved" fill="#10b981" radius={[6, 6, 0, 0]} name="Resolved This Month" />
+                <Bar dataKey="active" fill="#f59e0b" radius={[6, 6, 0, 0]} name="Active / In Progress" isAnimationActive={false} />
+                <Bar dataKey="resolved" fill="#10b981" radius={[6, 6, 0, 0]} name="Resolved This Month" isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -188,10 +228,10 @@ export default function Analytics() {
       </div>
 
       {/* AI Recurring Anomaly Detector */}
-      <Card className="p-6 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-white border border-blue-200/80 space-y-4">
+      <Card className="p-6 bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-white border border-emerald-200/80 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-2xs">
               <Sparkles className="h-4 w-4 text-amber-300" />
             </div>
             <div>
@@ -202,10 +242,10 @@ export default function Analytics() {
             </div>
           </div>
 
-          <Badge variant="purple">AI Model: Gemini 1.5 Flash</Badge>
+          <Badge variant="primary">AI Engine: Groq LPU (qwen/qwen3.8-27b)</Badge>
         </div>
 
-        <div className="p-4 bg-white rounded-xl border border-blue-200/60 shadow-xs space-y-2">
+        <div className="p-4 bg-white rounded-xl border border-emerald-200/60 shadow-xs space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-900">
               Cluster #01: Residential Block B Riser Plumbing Concentration

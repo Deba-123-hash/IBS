@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -45,20 +45,35 @@ export default function Leave() {
   const [submitting, setSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
+  useEffect(() => {
+    async function loadLeaves() {
+      try {
+        const res = await apiClient.get('/leave');
+        const list = res.data?.leaves || res.leaves || (Array.isArray(res.data) ? res.data : (Array.isArray(res) ? res : []));
+        if (list.length > 0) {
+          setLeaves(list);
+        }
+      } catch (err) {
+        console.warn('Leaves fetch fallback', err);
+      }
+    }
+    loadLeaves();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setSuccessMsg('');
 
     try {
-      // API call to leave endpoint
-      const newLeave = {
+      const res = await apiClient.post('/leave', form);
+      const created = res.data?.leave || res.data || {
         id: `LV-2026-${Math.floor(100 + Math.random() * 900)}`,
         ...form,
         status: 'PENDING'
       };
 
-      setLeaves([newLeave, ...leaves]);
+      setLeaves([created, ...leaves]);
       setSuccessMsg('Leave application lodged successfully! Warden notified.');
       setForm({
         type: 'PERSONAL',
@@ -91,9 +106,9 @@ export default function Leave() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Leave Form */}
-        <Card className="p-6 lg:col-span-1 space-y-4">
+        <Card className="p-6 lg:col-span-1 space-y-4 bg-white border border-slate-200/90 shadow-xs">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-blue-600" />
+            <Calendar className="h-4 w-4 text-emerald-600" />
             <span>Apply for Leave</span>
           </h2>
 
@@ -172,36 +187,54 @@ export default function Leave() {
         {/* Existing Leaves List */}
         <div className="lg:col-span-2 space-y-4">
           <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Clock className="h-4 w-4 text-slate-600" />
+            <Clock className="h-4 w-4 text-emerald-600" />
             <span>Active & Past Applications</span>
           </h2>
 
           <div className="space-y-3">
-            {leaves.map((leave) => (
-              <Card key={leave.id} className="p-4 hover:border-slate-300 transition">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-slate-500">{leave.id}</span>
-                      <StatusPill status={leave.status} />
-                      <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md">
-                        {leave.type}
-                      </span>
-                    </div>
-                    <h3 className="text-sm font-bold text-slate-900">{leave.reason}</h3>
-                    <p className="text-xs text-slate-500">
-                      Destination: <span className="text-slate-800 font-medium">{leave.destination}</span> •
-                      Emergency Phone: <span className="font-mono text-slate-700">{leave.emergencyContact}</span>
-                    </p>
-                  </div>
+            {leaves.map((leave) => {
+              const formatLeaveDate = (d) => {
+                if (!d) return '';
+                try {
+                  const date = new Date(d);
+                  return isNaN(date.getTime()) ? d : date.toISOString().split('T')[0];
+                } catch {
+                  return d;
+                }
+              };
 
-                  <div className="text-right text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 shrink-0">
-                    <div className="text-slate-400 text-[10px] uppercase font-bold">Duration</div>
-                    <div className="font-bold text-slate-800">{leave.startDate} to {leave.endDate}</div>
+              return (
+                <Card key={leave.id} className="p-4 bg-white border border-slate-200/90 shadow-xs hover:border-slate-300">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                          {leave.id}
+                        </span>
+                        <StatusPill status={leave.status} />
+                        <span className="text-xs font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                          {leave.type}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold text-slate-900 pt-0.5">
+                        {leave.reason || 'Hostel / Outstation Leave Permission'}
+                      </h3>
+                      <p className="text-xs text-slate-600">
+                        Destination: <span className="text-slate-900 font-semibold">{leave.destination || 'N/A'}</span> •
+                        Emergency Phone: <span className="font-mono text-slate-800 font-semibold">{leave.emergencyContact || 'N/A'}</span>
+                      </p>
+                    </div>
+
+                    <div className="text-right text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200 shrink-0">
+                      <div className="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Duration</div>
+                      <div className="font-bold text-slate-900 mt-0.5">
+                        {formatLeaveDate(leave.startDate)} to {formatLeaveDate(leave.endDate)}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -2,10 +2,10 @@ import { successResponse, errorResponse } from '../utils/response.js';
 
 export const verifyQrGatePass = async (req, res) => {
   try {
-    const { qrCodeToken } = req.body;
+    const qrCodeToken = req.body.qrCodeToken || req.body.qrData || req.body.token || req.body.passNumber;
 
     if (!qrCodeToken) {
-      return errorResponse(res, 'QR Code Token is required for scan verification', 'MISSING_TOKEN', 400);
+      return errorResponse(res, 'QR Code Token or Pass Number is required for scan verification', 'MISSING_TOKEN', 400);
     }
 
     // High fidelity response with student credentials

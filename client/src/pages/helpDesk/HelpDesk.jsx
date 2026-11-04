@@ -32,7 +32,7 @@ export default function HelpDesk() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white shadow-xs">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-2xs">
             <HelpCircle className="h-5 w-5" />
           </div>
           <div>
@@ -44,7 +44,7 @@ export default function HelpDesk() {
 
       <div className="grid md:grid-cols-12 gap-6">
         {/* Form Panel */}
-        <div className="md:col-span-7 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
+        <div className="md:col-span-7 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-xs">
           <h2 className="text-base font-bold text-slate-900 mb-4">Log Physical Student Request</h2>
 
           <form onSubmit={handleCreate} className="space-y-4 text-xs">
@@ -56,7 +56,7 @@ export default function HelpDesk() {
                 onChange={(e) => setStudentRoll(e.target.value)}
                 required
                 placeholder="e.g. CS2023048"
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 font-mono font-bold text-slate-900"
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2 font-mono font-bold text-slate-900 outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -65,7 +65,7 @@ export default function HelpDesk() {
               <select
                 value={requestType}
                 onChange={(e) => setRequestType(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 bg-white"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 bg-white outline-none focus:border-emerald-500"
               >
                 <option value="COMPLAINT">Hostel Facility Grievance (Repair)</option>
                 <option value="GATE_PASS">Emergency Gate Exit Pass</option>
@@ -81,7 +81,7 @@ export default function HelpDesk() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Bathroom sink pipe burst"
                 required
-                className="w-full rounded-xl border border-slate-200 px-3 py-2"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -93,14 +93,14 @@ export default function HelpDesk() {
                 onChange={(e) => setDetails(e.target.value)}
                 placeholder="Specific room number, reason, emergency phone..."
                 required
-                className="w-full rounded-xl border border-slate-200 px-3 py-2"
+                className="w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-xl bg-blue-600 py-2.5 font-bold text-white shadow-sm hover:bg-blue-700 transition"
+              className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 py-3 font-bold text-white shadow-soft transition hover-lift"
             >
               {submitting ? 'Generating Slip...' : 'Issue Proxy Ticket & Barcode Slip'}
             </button>
@@ -123,7 +123,7 @@ export default function HelpDesk() {
 
               {/* Barcode Mock */}
               <div className="p-3 bg-slate-50 rounded-xl flex flex-col items-center justify-center">
-                <div className="h-10 w-44 bg-slate-800 flex items-center justify-around px-2 text-white text-[9px] font-mono tracking-widest">
+                <div className="h-10 w-44 bg-slate-100 border border-slate-300 flex items-center justify-around px-2 text-slate-800 text-[9px] font-mono tracking-widest">
                   ||||| ||| |||| || |||||
                 </div>
                 <span className="font-mono text-[10px] text-slate-500 mt-1">{generatedSlip.barcode}</span>

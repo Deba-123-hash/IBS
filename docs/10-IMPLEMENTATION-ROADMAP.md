@@ -94,8 +94,8 @@ To deliver a fully operational full-stack application within an intensive hackat
 * **Objective:** Integrate the Campus AI Assistant, complaint auto-classification, duplicate detection, recurring issue detection, and the Help Desk proxy screen.
 * **Priority Tier:** `[CORE]` (Campus AI Assistant & Complaint Classification); `[IMPORTANT]` (Recurring Issue Intelligence & Help Desk Module); `[ENHANCEMENT]` (Multi-lingual i18n & Voice Prompts).
 * **Files to Create:**
-  * Client: `client/src/pages/student/AiAssistant.jsx`, `client/src/pages/helpDesk/HelpDesk.jsx`, `client/src/locales/{en,hi,or}.json`
-  * Server: `server/src/ai/aiService.js`, `server/src/ai/campusAssistant.js`, `server/src/ai/complaintClassifier.js`, `server/src/ai/recurringIssueDetector.js`, `server/src/routes/aiRoutes.js`
+  * Client: `client/src/pages/student/Chatbot.jsx`, `client/src/pages/helpDesk/HelpDesk.jsx`, `client/src/locales/{en,hi,or}.json`
+  * Server: `server/src/ai/aiService.js`, `server/src/ai/chatbotService.js`, `server/src/ai/complaintClassifier.js`, `server/src/ai/recurringIssueDetector.js`, `server/src/routes/aiRoutes.js`
 * **Database Entities:** `KnowledgeDocument`, `AIConversation`, `AIMessage`, `HelpDeskRequest`.
 * **APIs:** `POST /api/v1/ai/chat`, `POST /api/v1/ai/classify-complaint`, `GET /api/v1/ai/recurring-issues`, `POST /api/v1/help-desk/proxy-request`.
 * **Testing & Verification:** Test conversational queries against campus knowledge documents; verify fallback rule engine triggers if AI API key is missing.

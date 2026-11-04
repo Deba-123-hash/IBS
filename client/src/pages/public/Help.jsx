@@ -13,7 +13,7 @@ export default function Help() {
       <div className="grid md:grid-cols-2 gap-5">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-3 text-xs text-slate-600">
           <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
-            <HelpCircle className="h-5 w-5 text-blue-600" />
+            <HelpCircle className="h-5 w-5 text-emerald-600" />
             <span>Students Without Smartphones?</span>
           </div>
           <p>
@@ -22,7 +22,7 @@ export default function Help() {
           <div className="pt-2">
             <Link
               to="/help-desk"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition"
             >
               <span>Launch Help Desk Proxy Terminal</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -32,7 +32,7 @@ export default function Help() {
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs space-y-3 text-xs text-slate-600">
           <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
-            <Phone className="h-5 w-5 text-blue-600" />
+            <Phone className="h-5 w-5 text-emerald-600" />
             <span>Emergency Institutional Hotlines</span>
           </div>
           <ul className="space-y-2">

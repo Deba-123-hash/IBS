@@ -16,7 +16,8 @@ export const ROUTES = {
   STUDENT_HOSTEL: '/student/hostel',
   STUDENT_MESS: '/student/mess',
   STUDENT_NOTICES: '/student/notices',
-  STUDENT_AI: '/student/ai-assistant',
+  STUDENT_CHATBOT: '/student/chatbot',
+  STUDENT_AI: '/student/chatbot',
   STUDENT_PROFILE: '/student/profile',
 
   // Security Operations

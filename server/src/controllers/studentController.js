@@ -3,7 +3,11 @@ import { successResponse, errorResponse } from '../utils/response.js';
 
 export const getDashboardSummary = async (req, res) => {
   try {
-    const studentId = req.user?.studentId;
+    let studentId = req.user?.studentId;
+    if (!studentId && prisma && req.user?.id) {
+      const sp = await prisma.student.findFirst({ where: { userId: req.user.id } });
+      if (sp) studentId = sp.id;
+    }
 
     // Default high-fidelity summary
     let summary = {
@@ -60,9 +64,17 @@ export const getDashboardSummary = async (req, res) => {
 
     if (prisma && prisma.attendanceRecord && studentId) {
       try {
-        const records = await prisma.attendanceRecord.findMany({
-          where: { studentId }
-        });
+        const [records, activePass, openComplaints] = await Promise.all([
+          prisma.attendanceRecord.findMany({ where: { studentId } }),
+          prisma.gatePass.findFirst({
+            where: { studentId, status: { in: ['PENDING', 'APPROVED', 'CHECKED_OUT'] } },
+            orderBy: { createdAt: 'desc' }
+          }),
+          prisma.complaint.count({
+            where: { studentId, status: { in: ['SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD'] } }
+          })
+        ]);
+
         if (records.length > 0) {
           const total = records.length;
           const attended = records.filter(r => r.status === 'PRESENT').length;
@@ -76,23 +88,7 @@ export const getDashboardSummary = async (req, res) => {
           };
         }
 
-        const activePass = await prisma.gatePass.findFirst({
-          where: {
-            studentId,
-            status: { in: ['PENDING', 'APPROVED', 'CHECKED_OUT'] }
-          },
-          orderBy: { createdAt: 'desc' }
-        });
-        if (activePass) {
-          summary.activeGatePass = activePass;
-        }
-
-        const openComplaints = await prisma.complaint.count({
-          where: {
-            studentId,
-            status: { in: ['SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD'] }
-          }
-        });
+        if (activePass) summary.activeGatePass = activePass;
         summary.openComplaintsCount = openComplaints;
       } catch (err) {
         console.warn('[Student Dashboard DB]:', err.message);

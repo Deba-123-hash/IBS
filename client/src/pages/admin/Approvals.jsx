@@ -94,7 +94,7 @@ export default function AdminApprovals() {
 
               <div className="text-right text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-100 shrink-0">
                 <div className="text-slate-400 text-[10px] uppercase font-bold">Clearance Level</div>
-                <div className="font-bold text-blue-600">Dean / Warden Sign-off</div>
+                <div className="font-bold text-emerald-700">Dean / Warden Sign-off</div>
               </div>
             </div>
 

@@ -1,7 +1,7 @@
 {
-  "name": "campus-life-debugged",
+  "name": "campus-os",
   "version": "1.0.0",
-  "description": "Unified Campus Operations OS - Attendance, Mess, Hostel, Repeat: Campus Life, Debugged",
+  "description": "CAMPUS OS — Smart Campus & Hostel Management System",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -21,7 +21,8 @@
     "docker:down": "docker compose down",
     "health": "node scripts/health-check.js",
     "setup": "node scripts/setup.js",
-    "test": "node scripts/verify-phases.js"
+    "test": "node scripts/verify-phases.js",
+    "test:client": "node scripts/verify-frontend-components.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
@@ -34,6 +35,9 @@
     "hackathon",
     "education-tech"
   ],
-  "author": "Fretbox Campus OS Team",
-  "license": "MIT"
+  "author": "CAMPUS OS Team",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/adapter-pg": "^5.22.0"
+  }
 }

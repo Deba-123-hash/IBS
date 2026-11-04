@@ -43,7 +43,7 @@ export default function GateVerification() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
@@ -72,7 +72,7 @@ export default function GateVerification() {
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               placeholder="Scan or enter token: GP-SECURE-TOKEN-..."
-              className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-xs font-mono font-bold text-slate-900 focus:border-blue-500 focus:outline-none"
+              className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-xs font-mono font-bold text-slate-900 focus:border-emerald-500 focus:outline-none"
             />
             <QrCode className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
           </div>
@@ -80,7 +80,7 @@ export default function GateVerification() {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition"
+            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 transition"
           >
             <UserCheck className="h-4 w-4" />
             <span>Verify Pass</span>

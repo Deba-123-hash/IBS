@@ -1,28 +1,28 @@
 {
   "app": {
-    "title": "କ୍ୟାମ୍ପସ ଲାଇଫ, ଡିବଗ୍ଡ",
-    "tagline": "ଉପସ୍ଥିତି, ମେସ, ହଷ୍ଟେଲ, ପୁନରାବୃତ୍ତି: କ୍ୟାମ୍ପସ ଲାଇଫ, ଡିବଗ୍ଡ",
-    "onePlatform": "ପ୍ରତ୍ୟେକ ଦିନର କ୍ୟାମ୍ପସ କାର୍ଯ୍ୟ ପାଇଁ ଏକକ ପ୍ଲାଟଫର୍ମ।"
+    "title": "CAMPUS OS",
+    "tagline": "Attendance, Mess, Hostel, Operations: Campus Life, Debugged",
+    "onePlatform": "One unified platform for modern campus operations."
   },
   "nav": {
-    "home": "ମୂଳପୃଷ୍ଠା",
-    "about": "ଆମ ବିଷୟରେ",
-    "help": "ସାହାଯ୍ୟ",
-    "login": "ପ୍ରବେଶ",
-    "dashboard": "ଡ୍ୟାସବୋର୍ଡ",
-    "attendance": "ଉପସ୍ଥିତି",
-    "complaints": "ଅଭିଯୋଗ",
-    "gatePass": "ଗେଟ ପାସ",
-    "mess": "ମେସ",
-    "certificates": "ପ୍ରମାଣପତ୍ର",
-    "admin": "ପ୍ରଶାସନିକ କେନ୍ଦ୍ର"
+    "home": "Home",
+    "about": "About",
+    "help": "Help Desk",
+    "login": "Sign In",
+    "dashboard": "Dashboard",
+    "attendance": "Attendance",
+    "complaints": "Complaints",
+    "gatePass": "Gate Passes",
+    "mess": "Mess",
+    "certificates": "Certificates",
+    "admin": "Admin Center"
   },
   "auth": {
-    "signInTitle": "ସ୍ୱାଗତମ୍",
-    "signInSubtitle": "ଆପଣଙ୍କ ପ୍ରତିଷ୍ଠାନ ପରିଚୟପତ୍ର ବ୍ୟବହାର କରି ଲଗଇନ୍ କରନ୍ତୁ",
-    "emailLabel": "ପ୍ରତିଷ୍ଠାନ ଇମେଲ / ରୋଲ ନମ୍ବର",
-    "passwordLabel": "ପାସୱାର୍ଡ",
-    "submitBtn": "ପ୍ରବେଶ କରନ୍ତୁ",
-    "quickDemo": "୧-କ୍ଲିକ ଡେମୋ ମୋଡ଼"
+    "signInTitle": "Welcome Back",
+    "signInSubtitle": "Sign in with your campus institutional credentials",
+    "emailLabel": "Institutional Email / Roll Number",
+    "passwordLabel": "Password",
+    "submitBtn": "Sign In to CAMPUS OS",
+    "quickDemo": "1-Click Demo Evaluation Roles"
   }
 }

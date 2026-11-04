@@ -137,10 +137,69 @@ export const requirePermission = (permission) => {
   };
 };
 
+export const requireOwnership = (ownershipResolver) => {
+  return async (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required'
+        }
+      });
+    }
+
+    // SUPER_ADMIN can bypass resource ownership where authorized
+    if (req.user.role === 'SUPER_ADMIN') {
+      return next();
+    }
+
+    try {
+      const isOwner = await ownershipResolver(req);
+      if (!isOwner) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Resource ownership constraint violation: You can only access your own resources'
+          }
+        });
+      }
+      next();
+    } catch (err) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Resource ownership verification failed'
+        }
+      });
+    }
+  };
+};
+
+export const preventSelfApproval = (creatorField = 'createdById') => {
+  return (req, res, next) => {
+    const creatorId = req.targetResource?.[creatorField] || req.body?.[creatorField];
+    if (creatorId && req.user && req.user.id === creatorId) {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'SEPARATION_OF_DUTIES_VIOLATION',
+          message: 'Separation of duties violation: Self-approval is strictly prohibited.'
+        }
+      });
+    }
+    next();
+  };
+};
+
 export default {
   authenticate,
   requireAuth,
   authorize,
   requireRole,
-  requirePermission
+  requirePermission,
+  requireOwnership,
+  preventSelfApproval
 };

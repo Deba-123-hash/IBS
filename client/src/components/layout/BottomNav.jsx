@@ -8,7 +8,7 @@ export default function BottomNav() {
     { to: '/student/attendance', icon: CalendarCheck2, label: 'Attendance' },
     { to: '/student/gate-passes', icon: QrCode, label: 'Gate Pass' },
     { to: '/student/complaints', icon: Wrench, label: 'Complaints' },
-    { to: '/student/ai-assistant', icon: Bot, label: 'AI Helper' }
+    { to: '/student/chatbot', icon: Bot, label: 'Chatbot' }
   ];
 
   return (

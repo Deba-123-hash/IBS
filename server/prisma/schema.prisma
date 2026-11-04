@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -14,6 +15,7 @@ enum Role {
   MAINTENANCE
   SECURITY
   ACCOUNTS
+  ACCOUNTANT
   ADMIN
   SUPER_ADMIN
 }
@@ -103,6 +105,93 @@ enum GateEventType {
   CHECK_IN
 }
 
+enum FeeCategory {
+  HOSTEL_FEE
+  MESS_FEE
+  TUITION_FEE
+  EXAM_FEE
+  LIBRARY_FEE
+  FINE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  REJECTED
+  CANCELLED
+}
+
+enum ExpenseCategory {
+  HOSTEL
+  MESS
+  ELECTRICITY
+  WATER
+  MAINTENANCE
+  SECURITY
+  SALARY
+  EQUIPMENT
+  OTHER
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  PAID
+  REJECTED
+}
+
+enum ReconciliationStatus {
+  DRAFT
+  RECONCILED
+  DISCREPANCY_FLAGGED
+}
+
+enum TransferStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum GateLogStatus {
+  INSIDE
+  EXITED
+}
+
+enum EmergencyType {
+  MEDICAL
+  FIRE
+  SECURITY
+  FIGHT
+  ACCIDENT
+  OTHER
+}
+
+enum EmergencySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum EmergencyStatus {
+  OPEN
+  INVESTIGATING
+  RESOLVED
+}
+
+enum VisitorRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  INSIDE
+  EXITED
+  CANCELLED
+}
+
 model User {
   id              String           @id @default(cuid())
   email           String           @unique
@@ -125,6 +214,15 @@ model User {
   statusChanges   ComplaintStatusHistory[]
   noticeReads     NoticeRead[]
   createdAssignments ComplaintAssignment[] @relation("AssignedByUser")
+
+  verifiedPayments Payment[]             @relation("PaymentVerifiedBy")
+  createdExpenses Expense[]             @relation("ExpenseCreatedBy")
+  approvedExpenses Expense[]             @relation("ExpenseApprovedBy")
+  reconciliations Reconciliation[]      @relation("ReconciliationPerformedBy")
+  reviewedTransfers RoomTransfer[]        @relation("TransferReviewedBy")
+  reportedEmergencies EmergencyIncident[]   @relation("EmergencyReportedBy")
+  resolvedEmergencies EmergencyIncident[]   @relation("EmergencyResolvedBy")
+  reviewedVisitorRequests VisitorRequest[]  @relation("VisitorRequestReviewedBy")
 
   @@index([email])
   @@index([role])
@@ -187,6 +285,10 @@ model Student {
   messFeedback        MessFeedback[]
   visitorLogs         VisitorLog[]
   helpDeskRequests    HelpDeskRequest[]
+  payments            Payment[]
+  roomTransfers       RoomTransfer[]
+  gateLogs            GateLog[]
+  visitorRequests     VisitorRequest[]
 
   @@index([rollNumber])
   @@index([batchId])
@@ -213,6 +315,7 @@ model Staff {
   verifiedPayments FeePayment[]
   reviewedCerts   CertificateRequest[]
   helpDeskCreated HelpDeskRequest[]
+  recordedGateLogs GateLog[]
 
   @@index([employeeCode])
 }
@@ -318,6 +421,8 @@ model Room {
   allocations      RoomAllocation[]
   assets           Asset[]
   complaints       Complaint[]
+  transfersFrom    RoomTransfer[]   @relation("TransferFromRoom")
+  transfersTo      RoomTransfer[]   @relation("TransferToRoom")
 
   @@unique([blockId, roomNumber])
 }
@@ -518,6 +623,7 @@ model FeeRecord {
   createdAt     DateTime     @default(now())
 
   payments      FeePayment[]
+  directPayments Payment[]
 
   @@unique([studentId, academicYear, semester])
 }
@@ -582,6 +688,7 @@ model Visitor {
   createdAt     DateTime     @default(now())
 
   logs          VisitorLog[]
+  gateLogs      GateLog[]
 
   @@index([phoneNumber])
 }
@@ -651,9 +758,12 @@ model AuditLog {
   id          String    @id @default(cuid())
   userId      String?
   user        User?     @relation(fields: [userId], references: [id])
+  actorRole   String?
   action      String
   entity      String
   entityId    String
+  oldData     String?
+  newData     String?
   ipAddress   String?
   userAgent   String?
   payload     String?
@@ -661,6 +771,7 @@ model AuditLog {
 
   @@index([action])
   @@index([entity])
+  @@index([createdAt])
 }
 
 model KnowledgeDocument {
@@ -701,3 +812,200 @@ model HelpDeskRequest {
   status        String    @default("LOGGED")
   createdAt     DateTime  @default(now())
 }
+
+// ----------------------------------------------------
+// RBAC: Granular Permissions System
+// ----------------------------------------------------
+
+model Permission {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  name        String
+  description String?
+  resource    String
+  action      String
+  scope       String           @default("ALL")
+  isSensitive Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  roles       RolePermission[]
+
+  @@index([code])
+  @@index([resource])
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  role         Role
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([role, permissionId])
+  @@index([role])
+}
+
+// ----------------------------------------------------
+// Finance & Accounting Models
+// ----------------------------------------------------
+
+model Payment {
+  id             String        @id @default(cuid())
+  receiptNumber  String        @unique @default(cuid())
+  transactionRef String        @unique
+  studentId      String
+  student        Student       @relation(fields: [studentId], references: [id])
+  feeRecordId    String?
+  feeRecord      FeeRecord?    @relation(fields: [feeRecordId], references: [id], onDelete: SetNull)
+  amount         Float
+  feeCategory    FeeCategory   @default(TUITION_FEE)
+  paymentMode    String        @default("ONLINE")
+  status         PaymentStatus @default(PENDING)
+  verifiedById   String?
+  verifiedBy     User?         @relation("PaymentVerifiedBy", fields: [verifiedById], references: [id])
+  verifiedAt     DateTime?
+  rejectedReason String?
+  refundReason   String?
+  remarks        String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+  @@index([transactionRef])
+}
+
+model Expense {
+  id            String          @id @default(cuid())
+  title         String
+  amount        Float
+  category      ExpenseCategory @default(OTHER)
+  description   String?
+  invoiceNumber String?
+  vendorName    String?
+  status        ExpenseStatus   @default(APPROVED)
+  createdById   String
+  createdBy     User            @relation("ExpenseCreatedBy", fields: [createdById], references: [id])
+  approvedById  String?
+  approvedBy    User?           @relation("ExpenseApprovedBy", fields: [approvedById], references: [id])
+  expenseDate   DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([category])
+  @@index([status])
+}
+
+model Reconciliation {
+  id            String               @id @default(cuid())
+  periodStart   DateTime
+  periodEnd     DateTime
+  totalIncome   Float                @default(0.0)
+  totalExpenses Float                @default(0.0)
+  systemBalance Float                @default(0.0)
+  actualBalance Float                @default(0.0)
+  discrepancy   Float                @default(0.0)
+  status        ReconciliationStatus @default(RECONCILED)
+  notes         String?
+  performedById String
+  performedBy   User                 @relation("ReconciliationPerformedBy", fields: [performedById], references: [id])
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([status])
+  @@index([periodStart, periodEnd])
+}
+
+// ----------------------------------------------------
+// Hostel Room Transfer Management
+// ----------------------------------------------------
+
+model RoomTransfer {
+  id           String         @id @default(cuid())
+  studentId    String
+  student      Student        @relation(fields: [studentId], references: [id])
+  fromRoomId   String
+  fromRoom     Room           @relation("TransferFromRoom", fields: [fromRoomId], references: [id])
+  toRoomId     String
+  toRoom       Room           @relation("TransferToRoom", fields: [toRoomId], references: [id])
+  reason       String
+  status       TransferStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?          @relation("TransferReviewedBy", fields: [reviewedById], references: [id])
+  remarks      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+}
+
+// ----------------------------------------------------
+// Security: Gate Tracking & Emergencies
+// ----------------------------------------------------
+
+model GateLog {
+  id              String        @id @default(cuid())
+  personName      String
+  personType      String        @default("VISITOR")
+  studentId       String?
+  student         Student?      @relation(fields: [studentId], references: [id])
+  visitorId       String?
+  visitor         Visitor?      @relation(fields: [visitorId], references: [id])
+  vehicleNumber   String?
+  purpose         String?
+  entryTime       DateTime      @default(now())
+  exitTime        DateTime?
+  securityStaffId String?
+  securityStaff   Staff?        @relation(fields: [securityStaffId], references: [id])
+  status          GateLogStatus @default(INSIDE)
+  remarks         String?
+  createdAt       DateTime      @default(now())
+
+  @@index([entryTime])
+  @@index([status])
+}
+
+model EmergencyIncident {
+  id              String            @id @default(cuid())
+  incidentNumber  String            @unique
+  type            EmergencyType     @default(SECURITY)
+  severity        EmergencySeverity @default(HIGH)
+  location        String
+  description     String
+  reportedById    String?
+  reportedBy      User?             @relation("EmergencyReportedBy", fields: [reportedById], references: [id])
+  status          EmergencyStatus   @default(OPEN)
+  resolvedById    String?
+  resolvedBy      User?             @relation("EmergencyResolvedBy", fields: [resolvedById], references: [id])
+  resolutionNotes String?
+  resolvedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([status])
+  @@index([type])
+  @@index([severity])
+}
+
+model VisitorRequest {
+  id              String               @id @default(cuid())
+  visitorName     String
+  phoneNumber     String
+  idProofType     String?
+  idProofNumber   String?
+  studentId       String
+  student         Student              @relation(fields: [studentId], references: [id])
+  purpose         String
+  visitDate       DateTime
+  status          VisitorRequestStatus @default(PENDING)
+  reviewedById    String?
+  reviewedBy      User?                @relation("VisitorRequestReviewedBy", fields: [reviewedById], references: [id])
+  rejectionReason String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+}
+

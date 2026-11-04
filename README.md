@@ -1,12 +1,12 @@
-# CAMPUS LIFE, DEBUGGED
+# UNIFIX TECH — Unified Campus Operations Platform
 
 > **Tagline:** *Attendance, Mess, Hostel, Repeat: Campus Life, Debugged*  
-> **Organisation / Problem Owner:** Fretbox
+> **Brand Identity:** UNIFIX TECH
 
 ---
 
 ## 1. Executive Project Overview
-**Campus Life, Debugged** is a high-availability, low-bandwidth, mobile-first **Campus Operations Operating System (Campus OS)**. Developed for the Fretbox collegiate hackathon challenge, the platform eliminates fragmented paper registers, chaotic WhatsApp spam, manual complaint diaries, physical gate passes, and lost corkboard notices by delivering a single, unified digital command interface.
+**UNIFIX TECH** is a high-availability, low-bandwidth, mobile-first **Campus Operations Operating Platform**. Designed to eliminate fragmented paper registers, chaotic messaging channels, manual complaint diaries, physical gate passes, and lost corkboard notices, UNIFIX TECH delivers a single, unified digital command interface.
 
 The platform serves 8 distinct stakeholder roles:
 1. **Students** (Attendance, Gate Passes, Complaints, Mess Feedback, Certificates, AI Helper)
@@ -43,9 +43,10 @@ The platform serves 8 distinct stakeholder roles:
 * Approved passes generate a dynamic, high-contrast QR code on the student's mobile device.
 * Security guards scan the QR token at the gate checkpoint in under 2 seconds, verifying validity, curfew window, and student photo ID.
 
-### 🤖 3. 24/7 Context-Aware Campus AI Assistant
-* Instant answers regarding institutional circulars, scholarship bonafide applications, mess timings, curfew rules, and attendance requirements.
-* Embedded navigation shortcuts redirect students straight to relevant digital forms.
+### 🤖 3. 24/7 Context-Aware Campus AI Chatbot (Groq LPU)
+* High-speed, low-latency conversational AI powered by **Groq LPU inference** (`qwen/qwen3.8-27b` / `openai/gpt-oss-120b`).
+* Domain fine-tuned on institutional policies: gate pass approval cycles, curfews, mess timings, 75% attendance regulations, and hostel maintenance SLAs.
+* Embedded navigation shortcuts redirect students straight to relevant digital forms with contextual action buttons.
 
 ### 📊 4. Executive Command Center & Recurring Issue Intelligence
 * Real-time telemetry for Deans and Campus Directors: open tickets, SLA breaches, active gate crossings.
@@ -82,7 +83,7 @@ campus-life-debugged/
 │   │   ├── schema.prisma       # Neon PostgreSQL Database Models
 │   │   └── seed.js             # Realistic Campus Database Seeder
 │   ├── src/
-│   │   ├── ai/                 # Gemini/OpenAI Adapters & Heuristic Fallbacks
+│   │   ├── ai/                 # Groq LPU AI Service, Domain Chatbot & Heuristic Fallbacks
 │   │   ├── config/             # Database & Environment Configuration
 │   │   ├── controllers/        # Domain Route Controllers
 │   │   ├── middleware/         # Auth, RBAC, Rate Limiting, Error Handling
@@ -178,7 +179,7 @@ For seamless hackathon evaluation, the platform includes a **1-Click Demo Evalua
 | :--- | :--- | :--- | :--- |
 | **Student** | `student@campus.demo` | `Password@123` | Dashboard, Apply Gate Pass, Lodge Grievance, Mess Menu |
 | **Admin** | `admin@campus.demo` | `Password@123` | Executive Command Center, SLA Breaches, Recurring Intelligence |
-| **Super Admin** | `superadmin@campus.demo` | `Password@123` | Full Campus OS Governance, System Configuration & Audits |
+| **Super Admin** | `superadmin@campus.demo` | `Password@123` | Full UNIFIX TECH Governance, System Configuration & Audits |
 | **Warden** | `warden@campus.demo` | `Password@123` | Approve/Reject Gate Passes, Visual 24-Room Block Grid |
 | **Faculty** | `faculty@campus.demo` | `Password@123` | Student Academic Advising, Batch Attendance, Class Updates |
 | **Maintenance** | `maintenance@campus.demo` | `Password@123` | Work Queue, Mark In-Progress, Resolve Grievances |
@@ -223,4 +224,4 @@ The Docker container connects to your external Neon PostgreSQL database over sec
 ---
 
 ## 9. License
-MIT License. Developed for the Fretbox Hackathon 2026.
+MIT License. Developed for UNIFIX TECH.

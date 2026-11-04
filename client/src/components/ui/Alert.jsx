@@ -9,8 +9,8 @@ export const Alert = ({
 }) => {
   const types = {
     info: {
-      bg: 'bg-blue-50 border-blue-200 text-blue-900',
-      icon: <Info className="h-4 w-4 text-blue-600 shrink-0" />
+      bg: 'bg-teal-50 border-teal-200 text-teal-950',
+      icon: <Info className="h-4 w-4 text-teal-600 shrink-0" />
     },
     success: {
       bg: 'bg-emerald-50 border-emerald-200 text-emerald-900',

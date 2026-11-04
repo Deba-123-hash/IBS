@@ -47,6 +47,7 @@ export const TrendChart = ({
             strokeWidth={2.5}
             dot={{ r: 3, fill: strokeColor }}
             activeDot={{ r: 5 }}
+            isAnimationActive={false}
           />
         </LineChart>
       </ResponsiveContainer>

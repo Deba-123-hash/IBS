@@ -1,6 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
-  <rect width="100" height="100" rx="24" fill="#2563EB"/>
-  <path d="M50 20L22 36L50 52L78 36L50 20Z" fill="white"/>
-  <path d="M28 46V64C28 72 50 78 50 78C50 78 72 72 72 64V46L50 58L28 46Z" fill="#93C5FD"/>
-  <circle cx="50" cy="50" r="6" fill="#1D4ED8"/>
+  <defs>
+    <linearGradient id="campusOsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#0f766e" />
+    </linearGradient>
+    <linearGradient id="crestAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#a7f3d0" />
+    </linearGradient>
+  </defs>
+  <!-- Background Badge with soft radius -->
+  <rect width="100" height="100" rx="24" fill="url(#campusOsGrad)"/>
+  
+  <!-- Campus Academic Crest / Architectural Portico -->
+  <path d="M50 20L22 34L50 48L78 34L50 20Z" fill="white"/>
+  <path d="M28 39.5V60C28 62 30 64 32 64C34 64 36 62 36 60V43.5L28 39.5Z" fill="url(#crestAccent)"/>
+  
+  <!-- Central Campus OS Columns & Arch -->
+  <rect x="36" y="50" width="6" height="24" rx="2" fill="white"/>
+  <rect x="47" y="46" width="6" height="28" rx="2" fill="white"/>
+  <rect x="58" y="50" width="6" height="24" rx="2" fill="white"/>
+  
+  <!-- Institutional Foundation Base -->
+  <rect x="30" y="74" width="40" height="6" rx="2" fill="white"/>
+  
+  <!-- Campus OS Core Node -->
+  <circle cx="50" cy="34" r="3.5" fill="url(#campusOsGrad)"/>
 </svg>

@@ -3,7 +3,11 @@ import { successResponse, errorResponse } from '../utils/response.js';
 
 export const getMyAttendance = async (req, res) => {
   try {
-    const studentId = req.user?.studentId;
+    let studentId = req.user?.studentId;
+    if (!studentId && prisma && req.user?.id) {
+      const sp = await prisma.student.findFirst({ where: { userId: req.user.id } });
+      if (sp) studentId = sp.id;
+    }
 
     // Rich default mock attendance
     const defaultData = {

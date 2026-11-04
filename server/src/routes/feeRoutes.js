@@ -4,6 +4,7 @@ import { authenticate } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+router.get('/me', authenticate, getMyFees);
 router.get('/my-fees', authenticate, getMyFees);
 router.post('/queries', authenticate, submitFeeQuery);
 

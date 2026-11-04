@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 import apiRoutes from './routes/index.js';
 import { checkHealth } from './services/healthService.js';
+import { isGroqConfigured } from './services/ai/groqClient.js';
 import { successResponse } from './utils/response.js';
 
 const app = express();
@@ -29,14 +30,36 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Request Logging
 app.use(requestLogger);
 
-// Root Level Health Endpoint
-app.get('/health', async (req, res) => {
+// Root and API Level Health Endpoints
+app.get(['/health', '/api/health'], async (req, res) => {
   const healthData = await checkHealth();
-  return successResponse(res, healthData, 'Campus Life API is running');
+  if (healthData.database !== 'healthy') {
+    return res.status(503).json({
+      success: false,
+      database: 'disconnected',
+      data: healthData,
+      message: 'CAMPUS OS API running with database issues'
+    });
+  }
+  return res.status(200).json({
+    success: true,
+    database: 'connected',
+    api: 'healthy',
+    data: healthData,
+    message: 'CAMPUS OS API is running'
+  });
 });
 
-// API v1 Central Router
-app.use('/api/v1', apiRoutes);
+// Safe AI Health Endpoint
+app.get(['/health/ai', '/api/health/ai'], (req, res) => {
+  return res.status(200).json({
+    success: true,
+    groq: isGroqConfigured() ? 'configured' : 'missing'
+  });
+});
+
+// API Central Routers (supporting /api/v1 and /api)
+app.use(['/api/v1', '/api'], apiRoutes);
 
 // 404 & Centralized Error Handlers
 app.use(notFound);

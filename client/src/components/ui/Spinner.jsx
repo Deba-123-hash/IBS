@@ -1,5 +1,9 @@
 import React from 'react';
 
+/**
+ * Static non-animated loading status indicator for CAMPUS OS.
+ * Provides accessible role="status" feedback with zero rotational movement.
+ */
 export const Spinner = ({ size = 'md', className = '' }) => {
   const sizes = {
     sm: 'h-4 w-4 border-2',
@@ -9,7 +13,7 @@ export const Spinner = ({ size = 'md', className = '' }) => {
 
   return (
     <div
-      className={`rounded-full border-blue-600 border-t-transparent animate-spin ${sizes[size] || sizes.md} ${className}`}
+      className={`rounded-full border-emerald-600 border-t-emerald-200 ${sizes[size] || sizes.md} ${className}`}
       role="status"
       aria-label="Loading"
     />

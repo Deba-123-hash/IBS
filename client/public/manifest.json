@@ -1,6 +1,6 @@
 {
-  "short_name": "CampusOS",
-  "name": "Campus Life, Debugged - Campus Operations OS",
+  "short_name": "CAMPUS OS",
+  "name": "CAMPUS OS — Smart Campus & Hostel Management System",
   "icons": [
     {
       "src": "/logo.svg",
@@ -9,8 +9,8 @@
     }
   ],
   "start_url": "/",
-  "background_color": "#F8FAFC",
-  "theme_color": "#2563EB",
+  "background_color": "#F8FAF9",
+  "theme_color": "#059669",
   "display": "standalone",
   "orientation": "portrait"
 }

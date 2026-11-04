@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../api/client.js';
 import { CreditCard, CheckCircle2, Download, AlertCircle, HelpCircle } from 'lucide-react';
+import DataTable from '../../components/tables/DataTable.jsx';
+import Modal from '../../components/ui/Modal.jsx';
+import Input from '../../components/ui/Input.jsx';
+import Textarea from '../../components/ui/Textarea.jsx';
+import Button from '../../components/ui/Button.jsx';
+import Badge from '../../components/ui/Badge.jsx';
 
 export default function Fees() {
   const [feeData, setFeeData] = useState(null);
   const [showQueryModal, setShowQueryModal] = useState(false);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [submittedQuery, setSubmittedQuery] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
         const res = await apiClient.get('/fees/my-fees');
-        setFeeData(res.data);
+        setFeeData(res.data || res);
       } catch (err) {
         console.warn('Fees load fallback', err);
       }
@@ -23,6 +30,7 @@ export default function Fees() {
 
   const handleQuery = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       await apiClient.post('/fees/queries', { subject, message });
       setSubmittedQuery(true);
@@ -34,8 +42,49 @@ export default function Fees() {
       }, 1500);
     } catch (err) {
       alert('Failed to submit query');
+    } finally {
+      setSubmitting(false);
     }
   };
+
+  const componentsData = feeData?.components || [
+    { id: 1, name: 'Academic Tuition Fee', period: 'Semester 5', amount: 65000, status: 'PAID' },
+    { id: 2, name: 'Hostel Accommodation & Power', period: 'Semester 5', amount: 18000, status: 'PAID' },
+    { id: 3, name: 'Mess Food Advance', period: 'Semester 5', amount: 12000, status: 'PAID' },
+    { id: 4, name: 'Library & Lab Caution Deposit', period: 'One-time', amount: 2000, status: 'PAID' }
+  ];
+
+  const columns = [
+    {
+      header: 'Component',
+      accessor: 'name',
+      isPrimary: true,
+      render: (row) => <span className="font-semibold text-slate-900">{row.name}</span>
+    },
+    {
+      header: 'Billing Period',
+      accessor: 'period',
+      render: (row) => <span className="text-slate-500">{row.period || 'Semester 5'}</span>
+    },
+    {
+      header: 'Amount',
+      accessor: 'amount',
+      render: (row) => (
+        <span className="font-semibold text-slate-800">
+          ₹{row.amount?.toLocaleString('en-IN')}
+        </span>
+      )
+    },
+    {
+      header: 'Status',
+      accessor: 'status',
+      render: (row) => (
+        <Badge variant={row.status === 'PAID' ? 'success' : 'warning'}>
+          {row.status}
+        </Badge>
+      )
+    }
+  ];
 
   return (
     <div className="space-y-6">
@@ -49,9 +98,9 @@ export default function Fees() {
 
         <button
           onClick={() => setShowQueryModal(true)}
-          className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition"
+          className="flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 hover:border-emerald-300 transition hover-lift"
         >
-          <HelpCircle className="h-4 w-4 text-blue-600" />
+          <HelpCircle className="h-4 w-4 text-emerald-600" />
           <span>Raise Accounts Query</span>
         </button>
       </div>
@@ -79,97 +128,63 @@ export default function Fees() {
         </div>
       </div>
 
-      {/* Breakdown Ledger Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
-        <h2 className="text-base font-bold text-slate-900 mb-3">Itemized Fee Breakdown</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="border-b border-slate-100 bg-slate-50/70 text-slate-500">
-              <tr>
-                <th className="py-2.5 px-3 font-semibold">Component</th>
-                <th className="py-2.5 px-3 font-semibold">Billing Period</th>
-                <th className="py-2.5 px-3 font-semibold">Amount</th>
-                <th className="py-2.5 px-3 font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {(feeData?.components || [
-                { name: 'Academic Tuition Fee', amount: 65000, status: 'PAID' },
-                { name: 'Hostel Accommodation & Power', amount: 18000, status: 'PAID' },
-                { name: 'Mess Food Advance', amount: 12000, status: 'PAID' },
-                { name: 'Library & Lab Caution Deposit', amount: 2000, status: 'PAID' }
-              ]).map((comp, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50">
-                  <td className="py-3 px-3 font-medium text-slate-900">{comp.name}</td>
-                  <td className="py-3 px-3 text-slate-500">Semester 5</td>
-                  <td className="py-3 px-3 font-semibold text-slate-800">₹{comp.amount.toLocaleString('en-IN')}</td>
-                  <td className="py-3 px-3">
-                    <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[10px] font-bold">
-                      {comp.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* Breakdown Ledger Table (Responsive Mobile Cards & Desktop Grid) */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+        <h2 className="text-base font-bold text-slate-900">Itemized Fee Breakdown</h2>
+        <DataTable
+          columns={columns}
+          data={componentsData}
+          ariaLabel="Fee Breakdown Ledger"
+        />
       </div>
 
-      {/* Query Modal */}
-      {showQueryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900 mb-2">Raise Fee Query</h2>
-            <p className="text-xs text-slate-500 mb-4">Direct message to Accounts & Financial Aid Office</p>
-
-            {submittedQuery ? (
-              <div className="text-center py-6 text-emerald-600 text-xs font-bold">
-                ✓ Query submitted to Accounts Desk!
-              </div>
-            ) : (
-              <form onSubmit={handleQuery} className="space-y-4 text-xs">
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Subject</label>
-                  <input
-                    type="text"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g. Scholarship fee reimbursement inquiry"
-                    required
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Message</label>
-                  <textarea
-                    rows={3}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Provide details or bank transaction reference..."
-                    required
-                    className="w-full rounded-xl border border-slate-200 px-3 py-2"
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowQueryModal(false)}
-                    className="rounded-xl border border-slate-200 px-4 py-2 text-slate-700"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-xl bg-blue-600 px-5 py-2 font-bold text-white shadow-sm hover:bg-blue-700"
-                  >
-                    Submit Query
-                  </button>
-                </div>
-              </form>
-            )}
+      {/* Accessible Query Dialog */}
+      <Modal
+        isOpen={showQueryModal}
+        onClose={() => setShowQueryModal(false)}
+        title="Raise Fee Query"
+        subtitle="Direct message to Accounts & Financial Aid Office"
+        maxWidth="max-w-md"
+      >
+        {submittedQuery ? (
+          <div className="text-center py-6 text-emerald-600 text-xs font-bold">
+            ✓ Query submitted to Accounts Desk!
           </div>
-        </div>
-      )}
+        ) : (
+          <form onSubmit={handleQuery} className="space-y-4 text-xs">
+            <Input
+              label="Subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="e.g. Scholarship fee reimbursement inquiry"
+              required
+            />
+            <Textarea
+              label="Message"
+              rows={3}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Provide details or bank transaction reference..."
+              required
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowQueryModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="primary"
+                loading={submitting}
+              >
+                Submit Query
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }

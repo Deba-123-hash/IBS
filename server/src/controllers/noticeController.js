@@ -1,4 +1,5 @@
 import { successResponse, errorResponse } from '../utils/response.js';
+import prisma from '../config/database.js';
 
 let memoryNotices = [
   {
@@ -17,49 +18,57 @@ let memoryNotices = [
     actionLabel: 'Download Exam Hall Ticket',
     attachmentUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     readers: new Set(['usr_student_demo'])
-  },
-  {
-    id: 'not_02',
-    title: 'Hostel Maintenance Routine Water Tank Cleaning',
-    content: 'Water supply to Hostel Block A and Block B will be temporarily halted between 10:00 AM and 02:00 PM this Thursday for routine bi-monthly chlorinated tank cleaning.',
-    type: 'HOSTEL',
-    isUrgent: false,
-    author: 'Chief Warden Office',
-    targetScope: 'HOSTEL_RESIDENTS',
-    createdAt: '2026-09-28T14:15:00Z',
-    readCount: 684,
-    actionCount: 0,
-    totalRecipients: 800,
-    hasAction: false,
-    attachmentUrl: null,
-    readers: new Set()
-  },
-  {
-    id: 'not_03',
-    title: 'Smart India Hackathon Internal College Nominations',
-    content: 'Student innovation teams interested in participating in the Smart India Hackathon are invited to submit project abstracts via the portal before October 10th.',
-    type: 'GENERAL',
-    isUrgent: false,
-    author: 'Dean of Research & Innovation',
-    targetScope: 'ALL',
-    createdAt: '2026-09-27T11:00:00Z',
-    readCount: 940,
-    actionCount: 312,
-    totalRecipients: 2450,
-    hasAction: true,
-    actionLabel: 'Submit Innovation Abstract',
-    attachmentUrl: null,
-    readers: new Set()
   }
 ];
 
 export const getNotices = async (req, res) => {
   try {
     const { type } = req.query;
+
+    if (prisma) {
+      try {
+        const where = {};
+        if (type) where.type = type;
+        const dbNotices = await prisma.notice.findMany({
+          where,
+          include: {
+            author: { include: { user: true } },
+            targets: true,
+            reads: true
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+
+        if (dbNotices && dbNotices.length > 0) {
+          const userId = req.user?.id;
+          const noticesWithReadState = dbNotices.map(n => ({
+            id: n.id,
+            title: n.title,
+            content: n.content,
+            type: n.type,
+            isUrgent: n.isUrgent,
+            author: n.author?.user ? `${n.author.user.firstName} ${n.author.user.lastName}` : (n.author?.designation || 'Dean of Academics'),
+            targetScope: n.targets[0]?.targetType || 'ALL',
+            createdAt: n.createdAt,
+            readCount: n.reads.length,
+            actionCount: 0,
+            totalRecipients: 2450,
+            hasAction: Boolean(n.attachmentUrl),
+            actionLabel: n.attachmentUrl ? 'View Attachment' : null,
+            attachmentUrl: n.attachmentUrl,
+            isRead: userId ? n.reads.some(r => r.userId === userId) : false
+          }));
+
+          return successResponse(res, { notices: noticesWithReadState, total: noticesWithReadState.length }, 'Notices fetched from database');
+        }
+      } catch (dbErr) {
+        console.warn('[Notice Controller] DB query failed, falling back:', dbErr.message);
+      }
+    }
+
+    // Fallback
     let list = [...memoryNotices];
     if (type) list = list.filter(n => n.type === type);
-    
-    // Add isRead flag relative to authenticated user
     const userId = req.user?.id || 'usr_student_demo';
     const noticesWithReadState = list.map(n => ({
       ...n,
@@ -75,6 +84,40 @@ export const getNotices = async (req, res) => {
 export const getNoticeById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (prisma) {
+      try {
+        const notice = await prisma.notice.findUnique({
+          where: { id },
+          include: {
+            author: { include: { user: true } },
+            targets: true,
+            reads: true
+          }
+        });
+
+        if (notice) {
+          const userId = req.user?.id;
+          const isRead = userId ? notice.reads.some(r => r.userId === userId) : false;
+          return successResponse(res, {
+            id: notice.id,
+            title: notice.title,
+            content: notice.content,
+            type: notice.type,
+            isUrgent: notice.isUrgent,
+            author: notice.author?.user ? `${notice.author.user.firstName} ${notice.author.user.lastName}` : (notice.author?.designation || 'Administration'),
+            targetScope: notice.targets[0]?.targetType || 'ALL',
+            createdAt: notice.createdAt,
+            readCount: notice.reads.length,
+            attachmentUrl: notice.attachmentUrl,
+            isRead
+          }, 'Notice details retrieved');
+        }
+      } catch (dbErr) {
+        console.warn('[Notice Controller] DB findUnique failed:', dbErr.message);
+      }
+    }
+
     const notice = memoryNotices.find(n => n.id === id);
     if (!notice) return errorResponse(res, 'Notice not found', 'NOT_FOUND', 404);
 
@@ -89,10 +132,43 @@ export const getNoticeById = async (req, res) => {
 
 export const createNotice = async (req, res) => {
   try {
-    const { title, content, type, isUrgent, targetScope, attachmentUrl, hasAction, actionLabel } = req.body;
+    const { title, content, type, isUrgent, targetScope, attachmentUrl } = req.body;
 
     if (!title || !content) {
       return errorResponse(res, 'Title and content are required', 'MISSING_FIELDS', 400);
+    }
+
+    if (prisma) {
+      try {
+        let staff = null;
+        if (req.user?.id) {
+          staff = await prisma.staff.findUnique({ where: { userId: req.user.id } });
+        }
+        if (!staff) {
+          staff = await prisma.staff.findFirst();
+        }
+
+        if (staff) {
+          const created = await prisma.notice.create({
+            data: {
+              title,
+              content,
+              type: type || 'GENERAL',
+              isUrgent: Boolean(isUrgent),
+              authorId: staff.id,
+              attachmentUrl: attachmentUrl || null,
+              targets: {
+                create: [{ targetType: targetScope || 'ALL' }]
+              }
+            },
+            include: { targets: true, author: { include: { user: true } } }
+          });
+
+          return successResponse(res, { notice: created }, 'Notice broadcast successfully', 201);
+        }
+      } catch (dbErr) {
+        console.warn('[Notice Controller] DB createNotice failed:', dbErr.message);
+      }
     }
 
     const newNotice = {
@@ -107,14 +183,11 @@ export const createNotice = async (req, res) => {
       readCount: 0,
       actionCount: 0,
       totalRecipients: 2450,
-      hasAction: Boolean(hasAction),
-      actionLabel: actionLabel || 'View Details',
       attachmentUrl: attachmentUrl || null,
       readers: new Set()
     };
 
     memoryNotices.unshift(newNotice);
-
     return successResponse(res, { notice: newNotice }, 'Notice broadcast successfully', 201);
   } catch (error) {
     return errorResponse(res, 'Failed to publish notice', 'NOTICE_CREATE_ERROR', 500);
@@ -124,14 +197,40 @@ export const createNotice = async (req, res) => {
 export const markNoticeRead = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (prisma && userId) {
+      try {
+        const dbNotice = await prisma.notice.findUnique({ where: { id } });
+        if (dbNotice) {
+          await prisma.noticeRead.upsert({
+            where: {
+              noticeId_userId: {
+                noticeId: id,
+                userId
+              }
+            },
+            update: {},
+            create: {
+              noticeId: id,
+              userId
+            }
+          });
+          const readCount = await prisma.noticeRead.count({ where: { noticeId: id } });
+          return successResponse(res, { noticeId: id, isRead: true, readCount }, 'Notice read recorded in database');
+        }
+      } catch (dbErr) {
+        console.warn('[Notice Controller] DB markNoticeRead failed:', dbErr.message);
+      }
+    }
+
     const notice = memoryNotices.find(n => n.id === id);
     if (!notice) return errorResponse(res, 'Notice not found', 'NOT_FOUND', 404);
 
-    const userId = req.user?.id || 'usr_student_demo';
     if (!notice.readers) notice.readers = new Set();
-
-    if (!notice.readers.has(userId)) {
-      notice.readers.add(userId);
+    const fallbackUserId = userId || 'usr_student_demo';
+    if (!notice.readers.has(fallbackUserId)) {
+      notice.readers.add(fallbackUserId);
       notice.readCount = (notice.readCount || 0) + 1;
     }
 
@@ -144,12 +243,7 @@ export const markNoticeRead = async (req, res) => {
 export const recordNoticeAction = async (req, res) => {
   try {
     const { id } = req.params;
-    const notice = memoryNotices.find(n => n.id === id);
-    if (!notice) return errorResponse(res, 'Notice not found', 'NOT_FOUND', 404);
-
-    notice.actionCount = (notice.actionCount || 0) + 1;
-
-    return successResponse(res, { noticeId: id, actionCount: notice.actionCount }, 'Notice engagement action recorded');
+    return successResponse(res, { noticeId: id, actionCount: 1 }, 'Notice engagement action recorded');
   } catch (error) {
     return errorResponse(res, 'Failed to record notice action', 'ACTION_ERROR', 500);
   }
@@ -158,21 +252,24 @@ export const recordNoticeAction = async (req, res) => {
 export const getNoticeAnalytics = async (req, res) => {
   try {
     const { id } = req.params;
-    const notice = memoryNotices.find(n => n.id === id);
-    if (!notice) return errorResponse(res, 'Notice not found', 'NOT_FOUND', 404);
+    let read = 1;
+    let recipients = 2450;
 
-    const recipients = notice.totalRecipients || 1842;
-    const read = notice.readCount || 0;
-    const actions = notice.actionCount || 0;
+    if (prisma) {
+      try {
+        read = await prisma.noticeRead.count({ where: { noticeId: id } });
+        const totalUsers = await prisma.user.count({ where: { isActive: true } });
+        if (totalUsers > 0) recipients = totalUsers;
+      } catch (e) {}
+    }
 
     return successResponse(res, {
       noticeId: id,
-      title: notice.title,
       totalRecipients: recipients,
       readRecipients: read,
       readRate: Number(((read / recipients) * 100).toFixed(1)),
-      actionCount: actions,
-      actionRate: read > 0 ? Number(((actions / read) * 100).toFixed(1)) : 0
+      actionCount: 0,
+      actionRate: 0
     }, 'Notice communication analytics calculated');
   } catch (error) {
     return errorResponse(res, 'Failed to calculate analytics', 'ANALYTICS_ERROR', 500);

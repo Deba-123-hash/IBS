@@ -12,6 +12,10 @@ export const register = async (req, res) => {
       return errorResponse(res, 'Name, email, and password are required', 'MISSING_FIELDS', 400);
     }
 
+    if (password.length < 6) {
+      return errorResponse(res, 'Password must be at least 6 characters long', 'PASSWORD_TOO_SHORT', 400);
+    }
+
     // Security Rule: Public users must NOT self-register as privileged roles
     const forbiddenRoles = ['ADMIN', 'SUPER_ADMIN', 'WARDEN', 'SECURITY', 'ACCOUNTS', 'MAINTENANCE'];
     const requestedRole = (role || 'STUDENT').toUpperCase();
@@ -112,13 +116,34 @@ export const login = async (req, res) => {
       return errorResponse(res, 'Email and password are required', 'MISSING_FIELDS', 400);
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
+    let normalizedEmail = email.toLowerCase().trim();
+    const demoAliasMap = {
+      'student.demo': 'student@campus.demo',
+      'admin.demo': 'admin@campus.demo',
+      'superadmin.demo': 'superadmin@campus.demo',
+      'warden.demo': 'warden@campus.demo',
+      'faculty.demo': 'faculty@campus.demo',
+      'maintenance.demo': 'maintenance@campus.demo',
+      'security.demo': 'security@campus.demo',
+      'accounts.demo': 'accounts@campus.demo'
+    };
+    if (demoAliasMap[normalizedEmail]) {
+      normalizedEmail = demoAliasMap[normalizedEmail];
+    }
+
     let user = null;
 
     if (prisma && prisma.user) {
       try {
-        user = await prisma.user.findUnique({
-          where: { email: normalizedEmail },
+        user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: normalizedEmail },
+              { email: email.toLowerCase().trim() },
+              { studentProfile: { rollNumber: { equals: email.trim(), mode: 'insensitive' } } },
+              { staffProfile: { employeeCode: { equals: email.trim(), mode: 'insensitive' } } }
+            ]
+          },
           include: {
             studentProfile: true,
             staffProfile: true

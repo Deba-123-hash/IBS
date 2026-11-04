@@ -16,5 +16,14 @@ router.get('/:id', authenticate, getGatePassById);
 router.post('/', authenticate, createGatePass);
 router.patch('/:id/cancel', authenticate, cancelGatePass);
 router.patch('/:id/decision', authenticate, authorize('WARDEN', 'ADMIN', 'SUPER_ADMIN'), decideGatePass);
+router.post('/:id/decision', authenticate, authorize('WARDEN', 'ADMIN', 'SUPER_ADMIN'), decideGatePass);
+router.post('/:id/approve', authenticate, authorize('WARDEN', 'ADMIN', 'SUPER_ADMIN'), (req, res) => {
+  req.body.decision = req.body.decision || 'APPROVED';
+  return decideGatePass(req, res);
+});
+router.post('/:id/reject', authenticate, authorize('WARDEN', 'ADMIN', 'SUPER_ADMIN'), (req, res) => {
+  req.body.decision = req.body.decision || 'REJECTED';
+  return decideGatePass(req, res);
+});
 
 export default router;
